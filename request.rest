@@ -1,0 +1,19 @@
+GET http://localhost:3000/posts
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTWFya2t5dSIsImlhdCI6MTc1ODY3ODUxOX0.rpCJWI_nhEaorPSEujrkr3O4JsfNgLcjGuCD9pwhXDk
+
+###
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "username": "Markkyu"
+}
+
+### Colleges CRUD Test
+POST http://localhost:3000/api/colleges
+Content-Type: application/json
+
+{
+    "college_name": "Test College"
+}
