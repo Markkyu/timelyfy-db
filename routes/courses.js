@@ -13,43 +13,68 @@ const connection = require("../index"); // require connection
 courseRouter.get("/", (req, res) => {
   connection.query(
     "SELECT * FROM courses LEFT JOIN teachers ON courses.assigned_teacher = teachers.teacher_id",
-    (err, rows, fields) => {
-      try {
-        if (err) throw err;
-
-        res.status(200).json(rows);
-      } catch (err) {
-        res
+    (err, courseRows) => {
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error Occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      res.status(200).json(courseRows);
     }
   );
 });
 
-// GET Course with assigned teacher info where department Id
+// Assign teacher in a subject
+courseRouter.put("/assign/:course_id", (req, res) => {
+  const { teacher_id } = req.body;
+  const { course_id } = req.params;
+
+  connection.query(
+    `UPDATE courses SET assigned_teacher = ? WHERE course_id = ?`,
+    [teacher_id, course_id],
+    (err, result) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occured ${err.sqlMessage}` });
+
+      if (result.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ message: `Nothing found with subject Id ${course_id}` });
+
+      res
+        .status(200)
+        .json({ message: `A teacher was assigned to this course` });
+    }
+  );
+});
+
+// GET Course with assigned teacher info where department Id is id
 courseRouter.get("/:department", (req, res) => {
   const { department } = req.params;
+
   connection.query(
     "SELECT * FROM courses LEFT JOIN teachers ON courses.assigned_teacher = teachers.teacher_id WHERE course_college = ?",
     [department],
-    (err, rows, fields) => {
-      try {
-        if (err) throw err;
-
-        res.status(200).json(rows);
-      } catch (err) {
-        res
+    (err, result) => {
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error Occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: `Cannot find college course` });
+
+      res.status(200).json(result);
     }
   );
 });
 
-// CREATE Course
+// Add a subject in a college program, year, and sem
 courseRouter.post("/", (req, res) => {
   const {
+    course_code,
     course_name,
     hours_week,
     course_year,
@@ -58,9 +83,16 @@ courseRouter.post("/", (req, res) => {
     assigned_teacher,
   } = req.body;
 
+  if (hours_week < 1 || hours_week > 6) {
+    return res
+      .status(400)
+      .json({ message: "hours_week must be between 1 and 6" });
+  }
+
   connection.query(
-    `INSERT INTO courses (course_name, hours_week, course_year, course_college, semester, assigned_teacher) VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO courses (course_code, course_name, hours_week, course_year, course_college, semester, assigned_teacher) VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
+      course_code,
       course_name,
       hours_week,
       course_year,
@@ -68,27 +100,24 @@ courseRouter.post("/", (req, res) => {
       semester,
       assigned_teacher,
     ],
-
     (err, result) => {
-      try {
-        if (err) throw err;
-
-        res.status(201).json({
-          msg: `Course successfully created with Id: ${result.insertId}`,
-        });
-      } catch (err) {
-        res
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error Occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      res.status(201).json({
+        message: `Subject successfully added with Id: ${result.insertId}`,
+      });
     }
   );
 });
 
 // UPDATE Course
-courseRouter.put("/", (req, res) => {
+courseRouter.put("/:course_id", (req, res) => {
+  const { course_id } = req.params;
   const {
-    course_id,
+    course_code,
     course_name,
     hours_week,
     course_year,
@@ -98,8 +127,9 @@ courseRouter.put("/", (req, res) => {
   } = req.body;
 
   connection.query(
-    `UPDATE courses SET course_name = ?, hours_week = ?, assigned_teacher = ? WHERE course_id = ? AND course_year = ? AND semester = ? AND course_college = ?`,
+    `UPDATE courses SET course_code = ?, course_name = ?, hours_week = ?, assigned_teacher = ? WHERE course_id = ? AND course_year = ? AND semester = ? AND course_college = ?`,
     [
+      course_code,
       course_name,
       hours_week,
       assigned_teacher,
@@ -110,15 +140,19 @@ courseRouter.put("/", (req, res) => {
     ],
 
     (err, result) => {
-      try {
-        if (err) throw err;
+      if (err)
+        return res.status(500).json({
+          message: `An error has occurred: ${err.sqlMessage}`,
+        });
 
-        res.status(200).json({ msg: `Successfully updated!` });
-      } catch (err) {
-        res
-          .status(500)
-          .json({ message: `An Error Occurred: ${err.sqlMessage}` });
-      }
+      if (result.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ message: `No Subject found with Id: ${course_id}` });
+
+      res.status(200).json({
+        message: `Subject Id: ${course_id} has been successfully updated`,
+      });
     }
   );
 });
@@ -128,17 +162,22 @@ courseRouter.delete("/:course_id", (req, res) => {
   const { course_id } = req.params;
 
   connection.query(
-    `DELETE FROM courses WHERE course_id='${course_id}'`,
+    `DELETE FROM courses WHERE course_id = ?`,
+    [course_id],
     (err, result) => {
-      try {
-        if (err) throw err;
-
-        res.status(200).json({ msg: `Successfully deleted!` });
-      } catch (err) {
-        res
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error Occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      if (result.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ message: `Cannot find subject of Id: ${course_id}` });
+
+      res
+        .status(200)
+        .json({ message: `Successfully deleted subject Id ${course_id}` });
     }
   );
 });

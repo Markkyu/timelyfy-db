@@ -14,15 +14,12 @@ teacherRouter.get("/", (req, res) => {
   connection.query(
     "SELECT * FROM teachers JOIN colleges ON teachers.department = colleges.college_id",
     (err, rows) => {
-      try {
-        if (err) throw err;
-
-        res.status(200).json(rows);
-      } catch (err) {
-        res
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error has occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      res.status(200).json(rows);
     }
   );
 });
@@ -35,21 +32,17 @@ teacherRouter.get("/:teacher_name", (req, res) => {
     "SELECT * FROM teachers WHERE first_name = ?",
     [teacher_name],
     (err, rows) => {
-      try {
-        if (err) throw err;
-
-        if (rows.length > 0) {
-          res.status(200).json(rows);
-        } else {
-          res
-            .status(400)
-            .json({ msg: `Teacher Name: ${teacher_name} not found!` });
-        }
-      } catch (err) {
-        res
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error has occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occured: ${err.sqlMessage}` });
+
+      if (rows == 0)
+        return res.status(404).json({
+          message: `Teacher first name ${teacher_name} cannot be found`,
+        });
+
+      res.status(200).json(rows);
     }
   );
 });
@@ -58,71 +51,87 @@ teacherRouter.get("/:teacher_name", (req, res) => {
 teacherRouter.post("/", (req, res) => {
   const { first_name, last_name, department, teacher_availability } = req.body;
 
+  const firstNameClean = first_name?.trim();
+  const lastNameClean = last_name?.trim();
+
+  if (!firstNameClean || !lastNameClean || !department) {
+    return res.status(404).json({ message: `Fields cannot be empty` });
+  }
+
   connection.query(
     `INSERT INTO teachers (first_name, last_name, department, teacher_availability) VALUES (?, ?, ?, ?)`,
-    [first_name, last_name, department, teacher_availability],
+    [firstNameClean, lastNameClean, department, teacher_availability],
 
     (err, result) => {
-      try {
-        if (err) throw err;
-
-        res.status(200).json({
-          msg: `Teacher successfully created with Id: ${result.insertId}`,
-        });
-      } catch (err) {
-        res
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error has occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occured: ${err.sqlMessage}` });
+
+      res.status(200).json({
+        message: `Teacher successfully created with Id: ${result.insertId}`,
+      });
     }
   );
 });
 
 // UPDATE Teacher
-teacherRouter.put("/", (req, res) => {
-  const {
-    first_name,
-    last_name,
-    department,
-    teacher_availability,
-    teacher_id,
-  } = req.body;
+teacherRouter.put("/:teacher_id", (req, res) => {
+  const { teacher_id } = req.params;
+  const { first_name, last_name, department, teacher_availability } = req.body;
+
+  const firstNameClean = first_name?.trim();
+  const lastNameClean = last_name?.trim();
+
+  if (!firstNameClean || !lastNameClean || !department) {
+    return res.status(404).json({ message: `Fields cannot be empty` });
+  }
 
   connection.query(
     `UPDATE teachers SET first_name = ?, last_name = ?, department = ?, teacher_availability = ? WHERE teacher_id = ?`,
-    [first_name, last_name, department, teacher_availability, teacher_id],
+    [
+      firstNameClean,
+      lastNameClean,
+      department,
+      teacher_availability,
+      teacher_id,
+    ],
 
     (err, result) => {
-      try {
-        if (err) throw err;
-
-        res.status(200).json({ msg: `Successfully updated!` });
-      } catch (err) {
-        res
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error has occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occured: ${err.sqlMessage}` });
+
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: `Cannot find teacher` });
+
+      res
+        .status(200)
+        .json({ message: `Teacher Id: ${teacher_id} successfully updated` });
     }
   );
 });
 
 // DELETE Teacher
-teacherRouter.delete("/", (req, res) => {
-  const { teacher_id } = req.body;
+teacherRouter.delete("/:teacher_id", (req, res) => {
+  const { teacher_id } = req.params;
 
   connection.query(
     "DELETE FROM teachers WHERE teacher_id = ?",
     [teacher_id],
-    (err, fields) => {
-      try {
-        if (err) throw err;
-
-        res.json({ msg: `Successfully deleted!` });
-      } catch (err) {
-        res
+    (err, result) => {
+      if (err)
+        return res
           .status(500)
-          .json({ message: `An Error has occurred: ${err.sqlMessage}` });
-      }
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: `Cannot find teacher` });
+
+      res
+        .status(200)
+        .json({ message: `Teacher Id: ${teacher_id} successfully updated` });
     }
   );
 });

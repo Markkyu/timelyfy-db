@@ -30,18 +30,20 @@ teacherDepartmentRouter.get("/:department", (req, res) => {
 
         // Department exists, now get teachers
         connection.query(
-          "SELECT * FROM teachers WHERE department = ?",
+          "SELECT * FROM teachers JOIN colleges ON teachers.department = colleges.college_id WHERE teachers.department = ?",
           [department],
           (err, rows) => {
-            try {
-              if (err) throw err;
-
-              res.status(200).json(rows);
-            } catch (err) {
-              res
+            if (err)
+              return res
                 .status(500)
                 .json({ message: `Database error: ${err.sqlMessage}` });
-            }
+
+            res.status(200).json(rows);
+            // try {
+            //   if (err) throw err;
+
+            // } catch (err) {
+            // }
 
             // Department exists but no teachers
             // if (rows.length === 0) {

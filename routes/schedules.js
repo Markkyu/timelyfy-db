@@ -11,14 +11,13 @@ const connection = require("../index"); // require connection
 
 // GET Schedules
 scheduleRouter.get("/", (req, res) => {
-  connection.query("SELECT * FROM schedules", (err, rows, fields) => {
-    try {
-      if (err) throw err;
+  connection.query("SELECT * FROM schedules", (err, rows) => {
+    if (err)
+      return res
+        .status(500)
+        .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-      res.status(200).json(rows);
-    } catch (err) {
-      res.status(500).json({ message: `An Error Occurred: ${err.sqlMessage}` });
-    }
+    res.status(200).json(rows);
   });
 });
 

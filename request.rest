@@ -11,9 +11,10 @@ Content-Type: application/json
 }
 
 ### Colleges CRUD Test
-POST http://localhost:3000/api/colleges
+POST http://localhost:3000/api/assign-colleges
 Content-Type: application/json
 
 {
-    "college_name": "Test College"
+    "user_id": 1,
+    "program_id": 1
 }

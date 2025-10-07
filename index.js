@@ -30,13 +30,17 @@ const loggerFunction = (req, res, next) => {
 // Do not put below the endpoints it will not use the connection
 module.exports = connection; // Exports connection so routes/ can use the database
 
-// COLLEGE Router
+// LOGIN Router
 const loginRouter = require("./routes/login");
-app.use("/", loginRouter);
+app.use("/api/login", loginRouter);
 
 // COLLEGE Router
 const collegesRouter = require("./routes/colleges");
 app.use("/api/colleges", loggerFunction, collegesRouter);
+
+// ASSIGN COLLEGE Router
+const assignCollegeRouters = require("./routes/assignColleges");
+app.use("/api/assign-colleges", loggerFunction, assignCollegeRouters);
 
 // COURSES Router
 const courseRouter = require("./routes/courses");
@@ -57,6 +61,10 @@ app.use("/api/schedules", loggerFunction, scheduleRouter);
 // PHASE Router
 const phaseRouter = require("./routes/phase");
 app.use("/api/phase", loggerFunction, phaseRouter);
+// PHASE Router
+
+const userRouter = require("./routes/users");
+app.use("/api/users", loggerFunction, userRouter);
 
 // App listening at port
 app.listen(3000, () => {
