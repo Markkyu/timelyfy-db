@@ -1,6 +1,7 @@
 const express = require("express");
 const collegesRouter = express.Router();
 const connection = require("../index"); // require connection
+const { verifyRole } = require("../middleware/authMiddleware");
 
 // Common HTTP Requests
 // 200 - OK
@@ -12,14 +13,38 @@ const connection = require("../index"); // require connection
 
 // GET College Program
 collegesRouter.get("/", (req, res) => {
-  connection.query("SELECT * FROM colleges", (err, rows) => {
-    if (err)
-      return res
-        .status(500)
-        .json({ message: `An error has occurred: ${err.sqlMessage}` });
+  connection.query(
+    "SELECT * FROM colleges ORDER BY college_name ASC",
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-    res.status(200).json(rows);
-  });
+      res.status(200).json(rows);
+    }
+  );
+});
+
+collegesRouter.post("/", (req, res) => {
+  const { college_name } = req.body;
+
+  connection.query(
+    `INSERT INTO colleges (college_name) VALUES (?)`,
+    [college_name],
+    (err, rows) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+      }
+
+      res.status(201).json({
+        message: "College successfully inserted",
+        collegeId: rows.insertId,
+      });
+    }
+  );
 });
 
 // CREATE College Program
@@ -71,27 +96,31 @@ collegesRouter.put("/:college_id", (req, res) => {
 });
 
 // DELETE College Program
-collegesRouter.delete("/:college_id", (req, res) => {
-  const { college_id } = req.params;
+collegesRouter.delete(
+  "/:college_id",
+  verifyRole(["admin", "master_scheduler"]),
+  (req, res) => {
+    const { college_id } = req.params;
 
-  connection.query(
-    `DELETE FROM colleges WHERE college_id = ?`,
-    [college_id],
-    (err, result) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+    connection.query(
+      `DELETE FROM colleges WHERE college_id = ?`,
+      [college_id],
+      (err, result) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-      if (result.affectedRows === 0)
-        return res.status(404).json({ message: `College not found` });
+        if (result.affectedRows === 0)
+          return res.status(404).json({ message: `College not found` });
 
-      res.status(200).json({
-        message: `College Id: ${college_id} has been successfully deleted`,
-      });
-    }
-  );
-});
+        res.status(200).json({
+          message: `College Id: ${college_id} has been successfully deleted`,
+        });
+      }
+    );
+  }
+);
 
 module.exports = collegesRouter;
 

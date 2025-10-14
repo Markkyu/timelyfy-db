@@ -39,11 +39,6 @@ teacherDepartmentRouter.get("/:department", (req, res) => {
                 .json({ message: `Database error: ${err.sqlMessage}` });
 
             res.status(200).json(rows);
-            // try {
-            //   if (err) throw err;
-
-            // } catch (err) {
-            // }
 
             // Department exists but no teachers
             // if (rows.length === 0) {

@@ -29,23 +29,53 @@ assignCollegesRouter.get("/:userId", (req, res) => {
   });
 });
 
-// assign a college course to a user
-assignCollegesRouter.post("/", (req, res) => {
-  const { user_id, program_id } = req.body;
+// assign multiple colleges to a user
+assignCollegesRouter.post("/:user_id", (req, res) => {
+  const { program_ids } = req.body; // expects [1, 2, 3]
+  const { user_id } = req.params;
+
+  if (!Array.isArray(program_ids) || program_ids.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "program_ids must be a non-empty array" });
+  }
+
+  // Create array of values for bulk insert
+  const values = program_ids.map((id) => [user_id, id]);
 
   connection.query(
-    `INSERT INTO user_programs (user_id, program_id) VALUES (?, ?)`,
-    [user_id, program_id],
+    `INSERT IGNORE INTO user_programs (user_id, program_id) VALUES ?`,
+    [values],
     (err, result) => {
-      //   if (result.affectedRows === 0)
-      //     return res.status(404).json({ message: `Error duplicate keys` });
+      if (err) {
+        return res
+          .status(500)
+          .json({ message: `Database error: ${err.sqlMessage}` });
+      }
+      res
+        .status(201)
+        .json({ message: "User assigned to multiple programs successfully" });
+    }
+  );
+});
 
+assignCollegesRouter.delete("/:user_id", (req, res) => {
+  const { user_id } = req.params;
+  connection.query(
+    `DELETE FROM user_programs WHERE user_id = ?`,
+    [user_id],
+    (err, result) => {
       if (err)
-        return res.status(500).json({
-          message: `An error has occurred: ${err.sqlMessage}`,
-        });
-
-      res.status(201).json({ message: `User assigned a college course` });
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+      if (result.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ message: `No assigned programs found for this user` });
+      res.status(200).json({
+        message: `All assigned programs for User Id: ${user_id} have been deleted`,
+      });
     }
   );
 });

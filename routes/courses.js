@@ -71,6 +71,29 @@ courseRouter.get("/:department", (req, res) => {
   );
 });
 
+// GET A SPECIFIC Course with YEAR and SEM
+courseRouter.get("/:department/year/:year/sem/:sem", (req, res) => {
+  const { department, year, sem } = req.params;
+
+  connection.query(
+    "SELECT * FROM courses LEFT JOIN teachers ON courses.assigned_teacher = teachers.teacher_id WHERE course_college = ? AND course_year = ? AND semester = ?",
+    [department, year, sem],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      if (rows.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ message: `Cannot find college subjects` });
+
+      res.status(200).json(rows);
+    }
+  );
+});
+
 // Add a subject in a college program, year, and sem
 courseRouter.post("/", (req, res) => {
   const {

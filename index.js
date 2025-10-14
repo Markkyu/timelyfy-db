@@ -3,7 +3,6 @@ const cors = require("cors");
 const mysql = require("mysql");
 const app = express();
 require("dotenv").config();
-// const bcrypt = require("bcrypt");
 
 app.use(express.json());
 app.use(cors());
@@ -26,6 +25,17 @@ const loggerFunction = (req, res, next) => {
 
   next(); // run the next middleware or endpoint
 };
+
+// Middleware to check user roles
+function requireRole(requiredRoles) {
+  return (req, res, next) => {
+    const userRole = req.user.role; // decoded from JWT or session
+    if (!requiredRoles.includes(userRole)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  };
+}
 
 // Do not put below the endpoints it will not use the connection
 module.exports = connection; // Exports connection so routes/ can use the database
@@ -61,8 +71,8 @@ app.use("/api/schedules", loggerFunction, scheduleRouter);
 // PHASE Router
 const phaseRouter = require("./routes/phase");
 app.use("/api/phase", loggerFunction, phaseRouter);
-// PHASE Router
 
+// USERS Router
 const userRouter = require("./routes/users");
 app.use("/api/users", loggerFunction, userRouter);
 
