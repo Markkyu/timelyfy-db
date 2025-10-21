@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const connection = require("../index");
+const connection = require("../config/db");
 const loginRouter = express.Router();
 
 const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;

@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const connection = require("../index"); // adjust if your db connection is exported differently
+const connection = require("../config/db");
 
 // REGISTER endpoint
-router.post("/register", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -31,18 +31,19 @@ router.post("/register", async (req, res) => {
 
         // Insert user into database
         connection.query(
-          "INSERT INTO users (username, password) VALUES (?, ?)",
+          "INSERT INTO profiles (username, password) VALUES (?, ?)",
           [username, hashedPassword],
           (err, result) => {
             if (err) return res.status(500).json({ error: err });
 
             // Create JWT
-            const user = { id: result.insertId, name: username };
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-              expiresIn: "1h",
-            });
+            // const user = { id: result.insertId, name: username };
+            // const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+            //   expiresIn: "1h",
+            // });
 
-            return res.status(201).json({ accessToken: token });
+            // return res.status(201).json({ accessToken: token });
+            return res.status(201).json({ message: `User Created` });
           }
         );
       }

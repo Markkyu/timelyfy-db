@@ -1,6 +1,6 @@
 const express = require("express");
 const collegesRouter = express.Router();
-const connection = require("../index"); // require connection
+const connection = require("../config/db");
 const { verifyRole } = require("../middleware/authMiddleware");
 
 // Common HTTP Requests
@@ -26,12 +26,30 @@ collegesRouter.get("/", (req, res) => {
   );
 });
 
-collegesRouter.post("/", (req, res) => {
-  const { college_name } = req.body;
+// GET SPECIFIC College Program
+collegesRouter.get("/:college_id", (req, res) => {
+  const { college_id } = req.params;
 
   connection.query(
-    `INSERT INTO colleges (college_name) VALUES (?)`,
-    [college_name],
+    "SELECT * FROM colleges WHERE college_id = ?",
+    [college_id],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      res.status(200).json(rows);
+    }
+  );
+});
+
+collegesRouter.post("/", (req, res) => {
+  const { college_name, college_major } = req.body;
+
+  connection.query(
+    `INSERT INTO colleges (college_name, college_major) VALUES (?, ?)`,
+    [college_name, college_major],
     (err, rows) => {
       if (err) {
         return res
@@ -48,25 +66,25 @@ collegesRouter.post("/", (req, res) => {
 });
 
 // CREATE College Program
-collegesRouter.post("/", (req, res) => {
-  const { college_name } = req.body;
+// collegesRouter.post("/", (req, res) => {
+//   const { college_name } = req.body;
 
-  connection.query(
-    `INSERT INTO colleges (college_name) VALUES (?)`,
-    [college_name],
+//   connection.query(
+//     `INSERT INTO colleges (college_name) VALUES (?)`,
+//     [college_name],
 
-    (err, result) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+//     (err, result) => {
+//       if (err)
+//         return res
+//           .status(500)
+//           .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-      res.status(201).json({
-        message: `College successfully inserted with Id: ${result.insertId}`,
-      });
-    }
-  );
-});
+//       res.status(201).json({
+//         message: `College successfully inserted with Id: ${result.insertId}`,
+//       });
+//     }
+//   );
+// });
 
 // UPDATE College Program
 collegesRouter.put("/:college_id", (req, res) => {

@@ -1,16 +1,35 @@
 const express = require("express");
 const userRouter = express.Router();
-const connection = require("../index");
+const connection = require("../config/db");
 
 // ROUTE: /api/users
 
 // Get all users
 userRouter.get("/", (req, res) => {
-  connection.query("SELECT id, username, role FROM profiles", (err, rows) => {
-    if (err) return res.status(500).json({ message: "Cannot fetch users" });
+  connection.query(
+    "SELECT id, username, role, created_at FROM profiles",
+    (err, rows) => {
+      if (err) return res.status(500).json({ message: "Cannot fetch users" });
 
-    res.status(200).json(rows);
-  });
+      res.status(200).json(rows);
+    }
+  );
+});
+
+// Get all users
+userRouter.get("/:id", (req, res) => {
+  const { id } = req.params;
+
+  connection.query(
+    "SELECT id, username, role, created_at FROM profiles WHERE id = ?",
+    [id],
+    (err, results) => {
+      if (err) return res.status(500).json({ message: "Cannot fetch users" });
+      if (results.length === 0)
+        return res.status(404).json({ message: "User not found" });
+      res.json(results[0]);
+    }
+  );
 });
 
 // ASSIGN ROLE to user

@@ -1,6 +1,6 @@
 const express = require("express");
 const scheduleRouter = express.Router();
-const connection = require("../index"); // require connection
+const connection = require("../config/db");
 
 // Common HTTP Requests
 // 200 - OK
@@ -27,19 +27,17 @@ scheduleRouter.get("/", (req, res) => {
   );
 });
 
+//
 scheduleRouter.post("/", (req, res) => {
-  const schedules = req.body; // <-- This is an array
+  const schedules = req.body;
 
   if (!Array.isArray(schedules)) {
     return res.status(400).json({ message: "Expected an array of schedules" });
   }
 
-  // Loop through and insert each schedule
   const values = schedules.map((s) => [
     s.time_start,
-    s.time_end,
     s.course_id,
-    s.duration,
     s.teacher_id,
     s.college_id,
     s.year_level,
@@ -47,18 +45,62 @@ scheduleRouter.post("/", (req, res) => {
   ]);
 
   connection.query(
-    `INSERT INTO schedules (time_start, time_end, course_id, duration, teacher_id, college_id, year_level, semester)
+    `INSERT IGNORE INTO schedules (time_start, course_id, teacher_id, college_id, year_level, semester)
      VALUES ?`,
     [values],
     (err, results) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+      if (err) {
+        return res.status(500).json({
+          message: `An error has occurred: ${err.sqlMessage}`,
+        });
+      }
 
-      res
-        .status(201)
-        .json({ message: "Insert successful", inserted: results.affectedRows });
+      // Get all unique course_ids from the inserted schedules
+      const courseIds = [...new Set(values.map((v) => v[1]))];
+
+      // For each course, check if it's fully plotted
+      courseIds.forEach((courseId) => {
+        const checkQuery = `
+          SELECT 
+            c.course_id,
+            c.hours_week,
+            COUNT(s.time_start) AS scheduled_hours
+          FROM courses c
+          LEFT JOIN schedules s ON c.course_id = s.course_id
+          WHERE c.course_id = ?
+          GROUP BY c.course_id
+        `;
+
+        connection.query(checkQuery, [courseId], (err, rows) => {
+          if (err) {
+            console.error("Error checking plotted status:", err);
+            return;
+          }
+
+          if (rows.length > 0) {
+            const { hours_week, scheduled_hours } = rows[0];
+
+            if (scheduled_hours >= hours_week) {
+              connection.query(
+                `UPDATE courses SET is_plotted = 1 WHERE course_id = ?`,
+                [courseId],
+                (err) => {
+                  if (err)
+                    console.error(
+                      `Error updating is_plotted for course ${courseId}:`,
+                      err
+                    );
+                }
+              );
+            }
+          }
+        });
+      });
+
+      res.status(201).json({
+        message: "Insert successful",
+        inserted: results.affectedRows,
+      });
     }
   );
 });

@@ -1,6 +1,6 @@
 const express = require("express");
 const courseRouter = express.Router();
-const connection = require("../index"); // require connection
+const connection = require("../config/db");
 
 // Common HTTP Requests
 // 200 - OK
@@ -71,6 +71,28 @@ courseRouter.get("/:department", (req, res) => {
   );
 });
 
+// GET SPECIFIC COURSE FROM YEAR AND SEM
+courseRouter.get("/:department/filter", (req, res) => {
+  const { department } = req.params;
+  const { year, sem } = req.query;
+
+  connection.query(
+    "SELECT * FROM courses LEFT JOIN teachers ON courses.assigned_teacher = teachers.teacher_id WHERE course_college = ? AND course_year = ? AND semester = ?",
+    [department, year, sem],
+    (err, result) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: `Cannot find college course` });
+
+      res.status(200).json(result);
+    }
+  );
+});
+
 // GET A SPECIFIC Course with YEAR and SEM
 courseRouter.get("/:department/year/:year/sem/:sem", (req, res) => {
   const { department, year, sem } = req.params;
@@ -104,6 +126,7 @@ courseRouter.post("/", (req, res) => {
     course_college,
     semester,
     assigned_teacher,
+    created_by,
   } = req.body;
 
   if (hours_week < 1 || hours_week > 6) {
@@ -113,7 +136,7 @@ courseRouter.post("/", (req, res) => {
   }
 
   connection.query(
-    `INSERT INTO courses (course_code, course_name, hours_week, course_year, course_college, semester, assigned_teacher) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO courses (course_code, course_name, hours_week, course_year, course_college, semester, assigned_teacher, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       course_code,
       course_name,
@@ -122,6 +145,7 @@ courseRouter.post("/", (req, res) => {
       course_college,
       semester,
       assigned_teacher,
+      created_by,
     ],
     (err, result) => {
       if (err)

@@ -1,6 +1,6 @@
 const express = require("express");
 const assignCollegesRouter = express.Router();
-const connection = require("../index");
+const connection = require("../config/db");
 
 // /api/assign-colleges
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const teacherDepartmentRouter = express.Router();
-const connection = require("../index"); // require connection
+const connection = require("../config/db");
 
 // Common HTTP Requests
 // 200 - OK

@@ -1,6 +1,6 @@
 const express = require("express");
 const phaseRouter = express.Router();
-const connection = require("../index");
+const connection = require("../config/db");
 
 // How phase control works
 // GETS phase control

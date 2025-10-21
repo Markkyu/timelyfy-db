@@ -1,82 +1,48 @@
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql");
-const app = express();
 require("dotenv").config();
 
+const app = express();
 app.use(express.json());
 app.use(cors());
 
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+// Import custom middlewares
+const loggerFunction = require("./middleware/logger");
 
-connection.connect((err) => {
-  if (err) throw err;
-  console.log("Server Connected");
-});
-
-const loggerFunction = (req, res, next) => {
-  console.log("API called at: " + new Date().toTimeString());
-  console.log(`Request URL: ${req.originalUrl}`);
-
-  next(); // run the next middleware or endpoint
-};
-
-// Middleware to check user roles
-function requireRole(requiredRoles) {
-  return (req, res, next) => {
-    const userRole = req.user.role; // decoded from JWT or session
-    if (!requiredRoles.includes(userRole)) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-    next();
-  };
-}
-
-// Do not put below the endpoints it will not use the connection
-module.exports = connection; // Exports connection so routes/ can use the database
-
-// LOGIN Router
+// Import routes
 const loginRouter = require("./routes/login");
-app.use("/api/login", loginRouter);
-
-// COLLEGE Router
+const registerRouter = require("./routes/register");
 const collegesRouter = require("./routes/colleges");
-app.use("/api/colleges", loggerFunction, collegesRouter);
-
-// ASSIGN COLLEGE Router
 const assignCollegeRouters = require("./routes/assignColleges");
-app.use("/api/assign-colleges", loggerFunction, assignCollegeRouters);
-
-// COURSES Router
 const courseRouter = require("./routes/courses");
-app.use("/api/courses", loggerFunction, courseRouter);
-
-// TEACHERS Router
 const teacherRouter = require("./routes/teachers");
-app.use("/api/teachers", loggerFunction, teacherRouter);
-
-// TEACHERS in DEPARTMENT Router
 const teacherDepartmentRouter = require("./routes/teachersDepartment");
-app.use("/api/teachers/department/", loggerFunction, teacherDepartmentRouter);
-
-// SCHEDULES Router
 const scheduleRouter = require("./routes/schedules");
-app.use("/api/schedules", loggerFunction, scheduleRouter);
-
-// PHASE Router
 const phaseRouter = require("./routes/phase");
-app.use("/api/phase", loggerFunction, phaseRouter);
-
-// USERS Router
 const userRouter = require("./routes/users");
-app.use("/api/users", loggerFunction, userRouter);
+const roomRouter = require("./routes/rooms");
+const testRouter = require("./routes/test");
 
-// App listening at port
+// Default route
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from Timelyfy" });
+});
+
+// Use routers
+app.use("/api/login", loggerFunction, loginRouter);
+app.use("/api/register", loggerFunction, registerRouter);
+app.use("/api/colleges", loggerFunction, collegesRouter);
+app.use("/api/assign-colleges", loggerFunction, assignCollegeRouters);
+app.use("/api/courses", loggerFunction, courseRouter);
+app.use("/api/teachers", loggerFunction, teacherRouter);
+app.use("/api/teachers/department", loggerFunction, teacherDepartmentRouter);
+app.use("/api/schedules", loggerFunction, scheduleRouter);
+app.use("/api/phase", loggerFunction, phaseRouter);
+app.use("/api/users", loggerFunction, userRouter);
+app.use("/api/rooms", loggerFunction, roomRouter);
+app.use("/api/test", testRouter);
+
+// Start server
 app.listen(3000, () => {
-  console.log(`Server is running on http://localhost:3000`);
+  console.log("Server running on http://localhost:3000");
 });
