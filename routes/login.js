@@ -38,7 +38,7 @@ loginRouter.post("/", async (req, res) => {
             role: user.role,
           },
           JWT_SECRET,
-          { expiresIn: "1h" }
+          { expiresIn: "1d" }
         );
 
         // Send user info + token

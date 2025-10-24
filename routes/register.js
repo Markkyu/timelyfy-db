@@ -1,11 +1,11 @@
 const express = require("express");
-const router = express.Router();
+const registerRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const connection = require("../config/db");
 
 // REGISTER endpoint
-router.post("/", async (req, res) => {
+registerRouter.post("/", async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -13,6 +13,12 @@ router.post("/", async (req, res) => {
       return res
         .status(400)
         .json({ message: "Username and password are required" });
+    }
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters long." });
     }
 
     // Check if user exists
@@ -49,8 +55,8 @@ router.post("/", async (req, res) => {
       }
     );
   } catch (error) {
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-module.exports = router;
+module.exports = registerRouter;

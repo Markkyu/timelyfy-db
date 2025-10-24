@@ -50,6 +50,21 @@ courseRouter.put("/assign/:course_id", (req, res) => {
   );
 });
 
+// GET the 5 recently added courses
+courseRouter.get("/recent", (req, res) => {
+  connection.query(
+    "SELECT * FROM courses ORDER BY course_id DESC LIMIT 5",
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      res.status(200).json(rows);
+    }
+  );
+});
+
 // GET Course with assigned teacher info where department Id is id
 courseRouter.get("/:department", (req, res) => {
   const { department } = req.params;

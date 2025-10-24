@@ -12,19 +12,23 @@ const { verifyRole } = require("../middleware/authMiddleware");
 // ROUTE: /api/colleges
 
 // GET College Program
-collegesRouter.get("/", (req, res) => {
-  connection.query(
-    "SELECT * FROM colleges ORDER BY college_name ASC",
-    (err, rows) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+collegesRouter.get(
+  "/",
+  // verifyRole(["admin", "master_scheduler", "super_user", "user"]),
+  (req, res) => {
+    connection.query(
+      "SELECT * FROM colleges ORDER BY college_name ASC",
+      (err, rows) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-      res.status(200).json(rows);
-    }
-  );
-});
+        res.status(200).json(rows);
+      }
+    );
+  }
+);
 
 // GET SPECIFIC College Program
 collegesRouter.get("/:college_id", (req, res) => {
@@ -89,11 +93,11 @@ collegesRouter.post("/", (req, res) => {
 // UPDATE College Program
 collegesRouter.put("/:college_id", (req, res) => {
   const { college_id } = req.params; // request from params
-  const { college_name } = req.body; // request from body
+  const { college_name, college_major } = req.body; // request from body
 
   connection.query(
-    `UPDATE colleges SET college_name = ? WHERE college_id = ?`,
-    [college_name, college_id],
+    `UPDATE colleges SET college_name = ?, college_major = ? WHERE college_id = ?`,
+    [college_name, college_major, college_id],
 
     (err, result) => {
       if (err)
@@ -141,29 +145,3 @@ collegesRouter.delete(
 );
 
 module.exports = collegesRouter;
-
-// Trash bin -- commented -- might comeback later
-
-// LOOK UP a College Program with the College name
-// collegesRouter.get("/:college_name", (req, res) => {
-//   const { college_name } = req.params; // destructured variable
-
-//   connection.query(
-//     `SELECT * FROM colleges WHERE college_name = ?`, // Prevents SQL Injection
-//     [college_name],
-
-//     (err, rows) => {
-//       if (err)
-//         return res
-//           .status(500)
-//           .json({ message: `An error has occurred: ${err.sqlMessage}` });
-
-//       if (rows.length === 0)
-//         return res
-//           .status(400)
-//           .json({ message: `College name: ${college_name} not found` });
-
-//       res.status(200).json(rows);
-//     }
-//   );
-// });

@@ -12,7 +12,8 @@ const connection = require("../config/db");
 // GET Teachers
 teacherRouter.get("/", (req, res) => {
   connection.query(
-    "SELECT * FROM teachers JOIN colleges ON teachers.department = colleges.college_id",
+    "SELECT * FROM teachers ORDER BY first_name",
+    // "SELECT * FROM teachers JOIN colleges ON teachers.department = colleges.college_id",
     (err, rows) => {
       if (err)
         return res
@@ -48,19 +49,47 @@ teacherRouter.get("/:teacher_name", (req, res) => {
 });
 
 // CREATE Teacher
+// teacherRouter.post("/", (req, res) => {
+//   const { first_name, last_name, department, teacher_availability } = req.body;
+
+//   const firstNameClean = first_name?.trim();
+//   const lastNameClean = last_name?.trim();
+
+//   if (!firstNameClean || !lastNameClean || !department) {
+//     return res.status(404).json({ message: `Fields cannot be empty` });
+//   }
+
+//   connection.query(
+//     `INSERT INTO teachers (first_name, last_name, department, teacher_availability) VALUES (?, ?, ?, ?)`,
+//     [firstNameClean, lastNameClean, department, teacher_availability],
+
+//     (err, result) => {
+//       if (err)
+//         return res
+//           .status(500)
+//           .json({ message: `An error has occured: ${err.sqlMessage}` });
+
+//       res.status(200).json({
+//         message: `Teacher successfully created with Id: ${result.insertId}`,
+//       });
+//     }
+//   );
+// });
+
+// CREATE Teacher NO DEPARTMENT
 teacherRouter.post("/", (req, res) => {
-  const { first_name, last_name, department, teacher_availability } = req.body;
+  const { first_name, last_name, teacher_availability } = req.body;
 
   const firstNameClean = first_name?.trim();
   const lastNameClean = last_name?.trim();
 
-  if (!firstNameClean || !lastNameClean || !department) {
+  if (!firstNameClean || !lastNameClean) {
     return res.status(404).json({ message: `Fields cannot be empty` });
   }
 
   connection.query(
-    `INSERT INTO teachers (first_name, last_name, department, teacher_availability) VALUES (?, ?, ?, ?)`,
-    [firstNameClean, lastNameClean, department, teacher_availability],
+    `INSERT INTO teachers (first_name, last_name, teacher_availability) VALUES (?, ?, ?)`,
+    [firstNameClean, lastNameClean, teacher_availability],
 
     (err, result) => {
       if (err)

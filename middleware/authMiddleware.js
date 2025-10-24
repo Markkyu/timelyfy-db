@@ -23,7 +23,7 @@ function verifyRole(allowedRoles = []) {
       next();
     } catch (err) {
       console.error(err);
-      res.status(401).json({ message: "Invalid or expired token" });
+      res.status(401).json({ message: "Session Expired" });
     }
   };
 }
