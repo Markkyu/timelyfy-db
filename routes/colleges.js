@@ -43,7 +43,12 @@ collegesRouter.get("/:college_id", (req, res) => {
           .status(500)
           .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-      res.status(200).json(rows);
+      if (rows.length === 0)
+        return res
+          .status(404)
+          .json({ message: "No college found with this Id" });
+
+      res.status(200).json(rows[0]);
     }
   );
 });

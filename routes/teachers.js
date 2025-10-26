@@ -25,6 +25,29 @@ teacherRouter.get("/", (req, res) => {
   );
 });
 
+// GET Teacher schedules by Id
+teacherRouter.get("/schedule/:teacherId", (req, res) => {
+  const { teacherId } = req.params;
+
+  connection.query(
+    "SELECT * FROM teacher_schedules WHERE teacher_id = ? ORDER BY teacher_time_day, teacher_slot_time",
+    [teacherId],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+
+      if (rows == 0)
+        return res
+          .status(401)
+          .json({ message: `No teacher schedule found with Id` });
+
+      res.status(200).json(rows);
+    }
+  );
+});
+
 // SEARCH Teacher
 teacherRouter.get("/:teacher_name", (req, res) => {
   const { teacher_name } = req.params;
