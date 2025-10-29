@@ -91,21 +91,27 @@ courseRouter.get("/:department/filter", (req, res) => {
   const { department } = req.params;
   const { year, sem } = req.query;
 
-  connection.query(
-    "SELECT * FROM courses LEFT JOIN teachers ON courses.assigned_teacher = teachers.teacher_id WHERE course_college = ? AND course_year = ? AND semester = ?",
-    [department, year, sem],
-    (err, result) => {
-      if (err)
-        return res
-          .status(500)
-          .json({ message: `An error has occurred: ${err.sqlMessage}` });
+  const sql = `
+    SELECT c.course_id, c.course_code, c.course_name, c.hours_week, c.is_plotted, c.created_by, c.assigned_teacher, c.assigned_room, t.first_name, t.last_name, r.room_name 
+    FROM courses c 
+    LEFT JOIN teachers t 
+    ON c.assigned_teacher = t.teacher_id 
+    LEFT JOIN rooms r 
+    ON c.assigned_room = r.room_id 
+    WHERE c.course_college = ? AND c.course_year = ? AND c.semester = ?
+  `;
 
-      if (result.affectedRows === 0)
-        return res.status(404).json({ message: `Cannot find college course` });
+  connection.query(sql, [department, year, sem], (err, result) => {
+    if (err)
+      return res
+        .status(500)
+        .json({ message: `An error has occurred: ${err.sqlMessage}` });
 
-      res.status(200).json(result);
-    }
-  );
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: `Cannot find college course` });
+
+    res.status(200).json(result);
+  });
 });
 
 // GET A SPECIFIC Course with YEAR and SEM
